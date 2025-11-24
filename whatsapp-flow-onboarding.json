@@ -1,0 +1,204 @@
+{
+  "version": "7.2",
+  "data_api_version": "3.0",
+  "routing_model": {
+    "BASIC_INFO": ["ADDITIONAL_INFO"]
+  },
+  "screens": [
+    {
+      "id": "BASIC_INFO",
+      "title": "Business Registration",
+      "data": {
+        "business_name": {
+          "type": "string",
+          "__example__": "ABC Trading Ltd"
+        },
+        "contact_person": {
+          "type": "string",
+          "__example__": "John Doe"
+        },
+        "email": {
+          "type": "string",
+          "__example__": "john@example.com"
+        },
+        "business_address": {
+          "type": "string",
+          "__example__": "Lagos, Nigeria"
+        },
+        "nature_of_business": {
+          "type": "string",
+          "__example__": "Retail"
+        },
+        "registration_number": {
+          "type": "string",
+          "__example__": "RC123456"
+        },
+        "errors": {
+          "type": "object",
+          "__example__": {},
+          "properties": {
+            "business_name": {
+              "type": "string"
+            },
+            "contact_person": {
+              "type": "string"
+            },
+            "email": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "Welcome to HappyWoman"
+          },
+          {
+            "type": "TextBody",
+            "text": "Let's get you started with the essentials"
+          },
+          {
+            "type": "TextInput",
+            "name": "business_name",
+            "label": "Business Name",
+            "required": true,
+            "input-type": "text",
+            "init-value": "${data.business_name}",
+            "error-message": "${data.errors.business_name}"
+          },
+          {
+            "type": "TextInput",
+            "name": "contact_person",
+            "label": "Contact Person",
+            "required": true,
+            "input-type": "text",
+            "init-value": "${data.contact_person}",
+            "error-message": "${data.errors.contact_person}"
+          },
+          {
+            "type": "TextInput",
+            "name": "email",
+            "label": "Email Address",
+            "required": true,
+            "input-type": "email",
+            "init-value": "${data.email}",
+            "error-message": "${data.errors.email}"
+          },
+          {
+            "type": "Footer",
+            "label": "Next",
+            "on-click-action": {
+              "name": "data_exchange",
+              "payload": {}
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "ADDITIONAL_INFO",
+      "title": "Additional Details",
+      "terminal": true,
+      "success": true,
+      "data": {
+        "business_name": {
+          "type": "string",
+          "__example__": "ABC Trading Ltd"
+        },
+        "contact_person": {
+          "type": "string",
+          "__example__": "John Doe"
+        },
+        "email": {
+          "type": "string",
+          "__example__": "john@example.com"
+        },
+        "business_address": {
+          "type": "string",
+          "__example__": "Lagos, Nigeria"
+        },
+        "nature_of_business": {
+          "type": "string",
+          "__example__": "Retail"
+        },
+        "registration_number": {
+          "type": "string",
+          "__example__": "RC123456"
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "Almost Done!"
+          },
+          {
+            "type": "TextBody",
+            "text": "Add more details (optional)"
+          },
+          {
+            "type": "TextInput",
+            "name": "business_address",
+            "label": "Business Address",
+            "required": false,
+            "input-type": "text"
+          },
+          {
+            "type": "Dropdown",
+            "name": "nature_of_business",
+            "label": "Business Type",
+            "required": false,
+            "data-source": [
+              {
+                "id": "retail",
+                "title": "Retail"
+              },
+              {
+                "id": "wholesale",
+                "title": "Wholesale"
+              },
+              {
+                "id": "manufacturing",
+                "title": "Manufacturing"
+              },
+              {
+                "id": "services",
+                "title": "Services"
+              },
+              {
+                "id": "other",
+                "title": "Other"
+              }
+            ]
+          },
+          {
+            "type": "TextInput",
+            "name": "registration_number",
+            "label": "Registration Number",
+            "required": false,
+            "input-type": "text"
+          },
+          {
+            "type": "Footer",
+            "label": "Complete",
+            "on-click-action": {
+              "name": "complete",
+              "payload": {
+                "business_name": "${data.business_name}",
+                "contact_person": "${data.contact_person}",
+                "email": "${data.email}",
+                "business_address": "${data.business_address}",
+                "nature_of_business": "${data.nature_of_business}",
+                "registration_number": "${data.registration_number}"
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
