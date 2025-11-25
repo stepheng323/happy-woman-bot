@@ -12,6 +12,9 @@ import { DatabaseModule } from './core/database/database.module';
 import { RedisModule } from './core/redis/redis.module';
 import { UsersModule } from './modules/users/users.module';
 import { ChatbotModule } from './modules/chatbot/chatbot.module';
+import { ProductsModule } from './modules/products/products.module';
+import { CartModule } from './modules/cart/cart.module';
+import { OrdersModule } from './modules/orders/orders.module';
 
 @Module({
   imports: [
@@ -28,6 +31,9 @@ import { ChatbotModule } from './modules/chatbot/chatbot.module';
       }),
     }),
     UsersModule,
+    ProductsModule,
+    CartModule,
+    OrdersModule,
     WhatsappModule,
     WebhookModule,
     ChatbotModule,
