@@ -50,7 +50,6 @@ export class UsersService {
     } catch (error) {
       this.logger.error(
         `Failed to create user: ${error instanceof Error ? error.message : String(error)}`,
-        error instanceof Error ? error.stack : undefined,
       );
       throw error;
     }
@@ -62,7 +61,17 @@ export class UsersService {
     } catch (error) {
       this.logger.error(
         `Failed to find user by email: ${error instanceof Error ? error.message : String(error)}`,
-        error instanceof Error ? error.stack : undefined,
+      );
+      throw error;
+    }
+  }
+
+  async findByPhoneNumber(phoneNumber: string) {
+    try {
+      return await this.usersRepository.findByPhoneNumber(phoneNumber);
+    } catch (error) {
+      this.logger.error(
+        `Failed to find user by phone number: ${error instanceof Error ? error.message : String(error)}`,
       );
       throw error;
     }
