@@ -31,25 +31,17 @@ export class OnboardingFlow {
   getMainMenu(phoneNumber: string): SendMessageDto {
     return {
       to: phoneNumber,
-      type: 'interactive',
+      type: 'text',
       preview_url: false,
-      interactive: {
-        type: 'BUTTON',
-        body: {
-          text: 'What would you like to do next?',
-        },
-        action: {
-          buttons: [
-            {
-              type: 'reply',
-              reply: {
-                id: 'place_order_main',
-                title: 'Place an order',
-              },
-            },
-          ],
-        },
-      },
+      message: `Welcome to HappyWoman Commerce — the smart way to manage your supplies!
+
+What would you like to do today?
+
+*1.* Place your orders quickly
+*2.* Track your business expenses
+*3.* Earn rewards for every transaction!
+
+Please reply with the number (1, 2, or 3).`,
     };
   }
 }
