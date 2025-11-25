@@ -22,7 +22,7 @@ export type Product = {
   id: string;
   name: string;
   description: string | null;
-  price: string; // Decimal as string in Kysely
+  price: string;
   category: string | null;
   imageUrl: string | null;
   isActive: boolean;
@@ -52,7 +52,7 @@ export type PaymentStatus = 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED';
 export type Order = {
   id: string;
   userId: string;
-  totalAmount: string; // Decimal as string in Kysely
+  totalAmount: string;
   status: OrderStatus;
   deliveryAddress: string;
   paymentStatus: PaymentStatus;
@@ -66,8 +66,8 @@ export type OrderItem = {
   orderId: string;
   productId: string;
   quantity: number;
-  price: string; // Decimal as string in Kysely
-  subtotal: string; // Decimal as string in Kysely
+  price: string;
+  subtotal: string;
   createdAt: Generated<Timestamp>;
 };
 
