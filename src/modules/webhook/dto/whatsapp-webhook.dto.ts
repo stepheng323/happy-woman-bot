@@ -16,6 +16,8 @@ const MessageSchema = z.object({
     'contacts',
     'sticker',
     'interactive',
+    // Native WhatsApp commerce order messages
+    'order',
   ]),
   text: z
     .object({
@@ -173,11 +175,16 @@ export class WhatsappWebhookDto extends createZodDto(WhatsappWebhookSchema) {}
 // Response DTO for sending messages
 export const SendMessageSchema = z.object({
   to: z.string().min(1),
-  type: z.enum(['text', 'interactive', 'template']).optional().default('text'),
+  type: z
+    .enum(['text', 'interactive', 'template', 'catalog'])
+    .optional()
+    .default('text'),
   message: z.string().optional(),
   preview_url: z.boolean().optional().default(false),
   interactive: z.any().optional(),
   template: z.any().optional(),
+  catalog_id: z.string().optional(),
+  product_retailer_id: z.string().optional(),
 });
 
 export class SendMessageDto extends createZodDto(SendMessageSchema) {}

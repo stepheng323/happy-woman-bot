@@ -10,6 +10,7 @@ export class WhatsappService {
   private readonly phoneNumberId: string;
   private readonly accessToken: string;
   private readonly verifyToken: string;
+  private readonly catalogId: string | undefined;
 
   constructor(private readonly configService: ConfigService<Env>) {
     this.apiUrl = this.configService.get('WHATSAPP_API_URL', { infer: true })!;
@@ -22,6 +23,9 @@ export class WhatsappService {
     this.verifyToken = this.configService.get('WHATSAPP_VERIFY_TOKEN', {
       infer: true,
     })!;
+    this.catalogId = this.configService.get('WHATSAPP_CATALOG_ID', {
+      infer: true,
+    });
   }
 
   verifyWebhook(mode: string, token: string, challenge: string): string | null {
@@ -52,6 +56,31 @@ export class WhatsappService {
       payload.interactive = messageData.interactive;
     } else if (messageData.type === 'template') {
       payload.template = messageData.template;
+    } else if (messageData.type === 'catalog') {
+      // Catalog messages are sent as interactive messages with type 'catalog'
+      const catalogId = messageData.catalog_id || this.catalogId;
+      if (!catalogId) {
+        throw new HttpException(
+          'Catalog ID is required for catalog messages',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+      payload.type = 'interactive';
+      payload.interactive = {
+        type: 'CATALOG_MESSAGE',
+        body: {
+          text: messageData.message || 'Browse our products:',
+        },
+        action: {
+          name: 'catalog_message',
+          ...(messageData.product_retailer_id && {
+            parameters: {
+              thumbnail_product_retailer_id: messageData.product_retailer_id,
+            },
+          }),
+          catalog_id: catalogId,
+        },
+      };
     }
 
     try {
@@ -189,4 +218,3 @@ export class WhatsappService {
     }
   }
 }
-
