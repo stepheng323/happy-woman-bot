@@ -18,15 +18,11 @@ export interface OrderWithItems {
   updatedAt: Date;
   items: Array<{
     id: string;
-    productId: string;
+    productRetailerId: string;
+    productName: string;
+    productPrice: string;
     quantity: number;
     price: string;
     subtotal: string;
-    product: {
-      id: string;
-      name: string;
-      description: string | null;
-      price: string;
-    };
   }>;
 }

@@ -5,10 +5,10 @@ import { InvoiceService } from './services/invoice.service';
 import { ReceiptService } from './services/receipt.service';
 import { WaybillService } from './services/waybill.service';
 import { CartModule } from '../cart/cart.module';
-import { ProductsModule } from '../products/products.module';
+import { CatalogModule } from '../catalog/catalog.module';
 
 @Module({
-  imports: [CartModule, ProductsModule],
+  imports: [CartModule, CatalogModule],
   providers: [
     OrdersRepository,
     OrdersService,

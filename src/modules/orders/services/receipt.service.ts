@@ -23,7 +23,7 @@ export class ReceiptService {
       const price = parseFloat(item.price);
       const subtotal = parseFloat(item.subtotal);
 
-      lines.push(`${item.product.name}`);
+      lines.push(`${item.productName}`);
       lines.push(
         `  ${quantity} × ₦${price.toFixed(2)} = ₦${subtotal.toFixed(2)}`,
       );

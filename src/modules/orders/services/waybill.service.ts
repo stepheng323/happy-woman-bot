@@ -27,7 +27,7 @@ export class WaybillService {
     let itemCount = 0;
     for (const item of order.items) {
       itemCount += item.quantity;
-      lines.push(`${item.quantity}x ${item.product.name}`);
+      lines.push(`${item.quantity}x ${item.productName}`);
     }
 
     lines.push('');

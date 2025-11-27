@@ -1,9 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { OrdersRepository } from './orders.repository';
 import { CartService } from '../cart/cart.service';
-import { ProductsService } from '../products/products.service';
+import { CatalogService } from '../catalog/catalog.service';
 import { CreateOrderDto, OrderWithItems } from './dto/order.dto';
-import { OrderStatus, PaymentStatus } from '../../core/database/types';
+import { OrderStatus, PaymentStatus } from '../../database/enums';
 
 @Injectable()
 export class OrdersService {
@@ -12,7 +12,7 @@ export class OrdersService {
   constructor(
     private readonly ordersRepository: OrdersRepository,
     private readonly cartService: CartService,
-    private readonly productsService: ProductsService,
+    private readonly catalogService: CatalogService,
   ) {}
 
   async createOrderFromCart(
@@ -40,22 +40,16 @@ export class OrdersService {
         throw new Error('Failed to create order');
       }
 
-      // Add order items
+      // Add order items with product snapshots
       for (const item of cart.items) {
-        const product = await this.productsService.findById(item.productId);
-        if (!product) {
-          this.logger.warn(
-            `Product ${item.productId} not found, skipping order item`,
-          );
-          continue;
-        }
-
-        const price = parseFloat(product.price);
+        const price = parseFloat(item.product.price);
         const subtotal = price * item.quantity;
 
         await this.ordersRepository.addOrderItem(
           order.id,
-          item.productId,
+          item.productRetailerId,
+          item.product.name,
+          price,
           item.quantity,
           price,
           subtotal,
@@ -85,39 +79,28 @@ export class OrdersService {
       const itemsWithProducts = [];
 
       for (const item of items) {
-        const product = await this.productsService.findById(item.productId);
-        if (!product) {
-          this.logger.warn(
-            `Product ${item.productId} not found for order item`,
-          );
-          continue;
-        }
-
+        // Use stored product snapshot (no API call needed)
         itemsWithProducts.push({
           id: item.id,
-          productId: item.productId,
+          productRetailerId: item.product_retailer_id,
+          productName: item.product_name,
+          productPrice: item.product_price,
           quantity: item.quantity,
           price: item.price,
           subtotal: item.subtotal,
-          product: {
-            id: product.id,
-            name: product.name,
-            description: product.description,
-            price: product.price,
-          },
         });
       }
 
       return {
         id: order.id,
-        userId: order.userId,
-        totalAmount: order.totalAmount,
+        userId: order.user_id,
+        totalAmount: order.total_amount,
         status: order.status,
-        deliveryAddress: order.deliveryAddress,
-        paymentStatus: order.paymentStatus,
-        paymentLink: order.paymentLink,
-        createdAt: order.createdAt,
-        updatedAt: order.updatedAt,
+        deliveryAddress: order.delivery_address,
+        paymentStatus: order.payment_status,
+        paymentLink: order.payment_link,
+        createdAt: order.created_at,
+        updatedAt: order.updated_at,
         items: itemsWithProducts,
       };
     } catch (error) {

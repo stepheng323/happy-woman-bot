@@ -22,7 +22,7 @@ export class InvoiceService {
       const price = parseFloat(item.price);
       const subtotal = parseFloat(item.subtotal);
 
-      lines.push(`${item.product.name}`);
+      lines.push(`${item.productName}`);
       lines.push(
         `  Qty: ${quantity} × ₦${price.toFixed(2)} = ₦${subtotal.toFixed(2)}`,
       );
