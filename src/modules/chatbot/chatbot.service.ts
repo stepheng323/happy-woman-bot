@@ -35,6 +35,13 @@ export class ChatbotService {
         return this.handleTextMessage(message, senderPhone);
       case 'interactive':
         return this.handleInteractiveMessage(message, senderPhone);
+      case 'order':
+        // Log native WhatsApp Commerce order messages for debugging.
+        // These are separate from our custom cart/order flow.
+        this.logger.debug(
+          `Received WhatsApp ORDER message from ${senderPhone}: ${JSON.stringify(message, null, 2)}`,
+        );
+        return null;
       default:
         this.logger.debug(`Unhandled message type: ${message.type}`);
         return null;
@@ -88,7 +95,7 @@ export class ChatbotService {
 
     switch (normalizedText) {
       case '1':
-        return await this.cartFlow.showProductCatalog(senderPhone);
+        return this.cartFlow.showProductCatalog(senderPhone);
       case '2':
         return {
           to: senderPhone,
@@ -117,7 +124,11 @@ export class ChatbotService {
     const interactive = message.interactive;
 
     if (interactive?.type === 'button_reply') {
-      return this.handleButtonReply(interactive.button_reply?.id, senderPhone);
+      return this.handleButtonReply(
+        interactive.button_reply?.id,
+        senderPhone,
+        message,
+      );
     } else if (interactive?.type === 'list_reply') {
       return this.handleListReply(interactive.list_reply?.id, senderPhone);
     }
@@ -128,6 +139,7 @@ export class ChatbotService {
   private async handleButtonReply(
     buttonId: string | undefined,
     senderPhone: string,
+    message?: WhatsappMessage,
   ): Promise<SendMessageDto | SendMessageDto[] | null> {
     if (!buttonId) {
       return null;
@@ -143,6 +155,17 @@ export class ChatbotService {
 
     const userId = user.id;
 
+    // Check if this is a catalog product selection
+    if (message?.context?.referred_product?.product_retailer_id) {
+      const productRetailerId =
+        message.context.referred_product.product_retailer_id;
+      return await this.cartFlow.handleAddToCart(
+        senderPhone,
+        userId,
+        productRetailerId,
+      );
+    }
+
     // Handle cart-related buttons
     if (buttonId === 'view_cart' || buttonId === 'edit_cart') {
       return await this.cartFlow.showCart(senderPhone, userId);
@@ -150,13 +173,13 @@ export class ChatbotService {
       buttonId === 'browse_products' ||
       buttonId === 'view_all_products'
     ) {
-      return await this.cartFlow.showProductCatalog(senderPhone);
+      return this.cartFlow.showProductCatalog(senderPhone);
     } else if (buttonId.startsWith('product_')) {
-      const productId = buttonId.replace('product_', '');
+      const productRetailerId = buttonId.replace('product_', '');
       return await this.cartFlow.handleAddToCart(
         senderPhone,
         userId,
-        productId,
+        productRetailerId,
       );
     } else if (buttonId === 'place_order') {
       // Request delivery address
@@ -192,7 +215,11 @@ export class ChatbotService {
       return null;
     }
 
-    const productId = listId.replace('product_', '');
-    return await this.cartFlow.handleAddToCart(senderPhone, user.id, productId);
+    const productRetailerId = listId.replace('product_', '');
+    return await this.cartFlow.handleAddToCart(
+      senderPhone,
+      user.id,
+      productRetailerId,
+    );
   }
 }

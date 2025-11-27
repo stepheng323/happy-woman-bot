@@ -68,7 +68,6 @@ export class ChatbotProcessor extends WorkerHost {
               : [response];
             for (const msg of messagesToSend) {
               try {
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
                 await this.whatsappService.sendMessage(msg);
               } catch (sendError) {
                 this.logger.error(

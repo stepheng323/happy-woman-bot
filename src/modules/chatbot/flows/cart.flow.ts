@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ProductsService } from '../../products/products.service';
+import { CatalogService } from '../../catalog/catalog.service';
 import { CartService } from '../../cart/cart.service';
 import { WhatsappService } from '../../whatsapp/whatsapp.service';
 import { SendMessageDto } from '../../webhook/dto/whatsapp-webhook.dto';
@@ -9,99 +9,19 @@ export class CartFlow {
   private readonly logger = new Logger(CartFlow.name);
 
   constructor(
-    private readonly productsService: ProductsService,
+    private readonly catalogService: CatalogService,
     private readonly cartService: CartService,
     private readonly whatsappService: WhatsappService,
   ) {}
 
-  async showProductCatalog(phoneNumber: string): Promise<SendMessageDto> {
-    try {
-      const products = await this.productsService.findAll(true);
-
-      if (products.length === 0) {
-        return {
-          to: phoneNumber,
-          type: 'text',
-          preview_url: false,
-          message:
-            'No products available at the moment. Please check back later.',
-        };
-      }
-
-      if (products.length <= 10) {
-        const buttons = products.slice(0, 3).map((product, _) => ({
-          type: 'reply' as const,
-          reply: {
-            id: `product_${product.id}`,
-            title: `${product.name} - ₦${parseFloat(product.price).toFixed(2)}`,
-          },
-        }));
-
-        if (products.length > 3) {
-          buttons.push({
-            type: 'reply' as const,
-            reply: {
-              id: 'view_all_products',
-              title: 'View All Products',
-            },
-          });
-        }
-
-        return {
-          to: phoneNumber,
-          type: 'interactive',
-          preview_url: false,
-          interactive: {
-            type: 'BUTTON',
-            body: {
-              text: 'What would you like to order? Select a product:',
-            },
-            action: {
-              buttons,
-            },
-          },
-        };
-      } else {
-        // Use LIST for larger catalogs
-        const sections = [
-          {
-            title: 'Products',
-            rows: products.slice(0, 10).map((product) => ({
-              id: `product_${product.id}`,
-              title: product.name,
-              description: `₦${parseFloat(product.price).toFixed(2)}`,
-            })),
-          },
-        ];
-
-        return {
-          to: phoneNumber,
-          type: 'interactive',
-          preview_url: false,
-          interactive: {
-            type: 'LIST',
-            body: {
-              text: 'What would you like to order? Select a product:',
-            },
-            action: {
-              button: 'Browse Products',
-              sections,
-            },
-          },
-        };
-      }
-    } catch (error) {
-      this.logger.error(
-        `Failed to show product catalog: ${error instanceof Error ? error.message : String(error)}`,
-      );
-      return {
-        to: phoneNumber,
-        type: 'text',
-        preview_url: false,
-        message:
-          'Sorry, we encountered an error loading products. Please try again later.',
-      };
-    }
+  showProductCatalog(phoneNumber: string): SendMessageDto {
+    // Send catalog message - Meta handles product display
+    return {
+      to: phoneNumber,
+      type: 'catalog',
+      message: 'Browse our products:',
+      preview_url: false,
+    };
   }
 
   async showCart(phoneNumber: string, userId: string): Promise<SendMessageDto> {
@@ -203,13 +123,16 @@ export class CartFlow {
   async handleAddToCart(
     phoneNumber: string,
     userId: string,
-    productId: string,
+    productRetailerId: string,
     quantity = 1,
   ): Promise<SendMessageDto> {
     try {
-      await this.cartService.addItem(userId, { productId, quantity });
+      await this.cartService.addItem(userId, {
+        productRetailerId,
+        quantity,
+      });
 
-      const product = await this.productsService.findById(productId);
+      const product = await this.catalogService.getProduct(productRetailerId);
       const productName = product?.name || 'Product';
 
       return {

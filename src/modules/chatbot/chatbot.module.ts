@@ -7,14 +7,14 @@ import { CartFlow } from './flows/cart.flow';
 import { OrderFlow } from './flows/order.flow';
 import { UsersModule } from '../users/users.module';
 import { WhatsappModule } from '../whatsapp/whatsapp.module';
-import { ProductsModule } from '../products/products.module';
+import { CatalogModule } from '../catalog/catalog.module';
 import { CartModule } from '../cart/cart.module';
 import { OrdersModule } from '../orders/orders.module';
 
 @Module({
   imports: [
     UsersModule,
-    ProductsModule,
+    CatalogModule,
     CartModule,
     OrdersModule,
     WhatsappModule,
