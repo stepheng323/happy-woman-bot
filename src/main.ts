@@ -15,27 +15,18 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService<Env>);
 
-  // Get configuration
   const port = configService.get('PORT', { infer: true }) ?? 3000;
-  // const apiPrefix = configService.get('API_PREFIX', { infer: true }) ?? 'api';
-  // const apiVersion = configService.get('API_VERSION', { infer: true }) ?? 'v1';
   const nodeEnv =
     configService.get('NODE_ENV', { infer: true }) ?? 'development';
   const corsOrigin = configService.get('CORS_ORIGIN', { infer: true }) ?? '*';
 
-  // Global prefix
-  // app.setGlobalPrefix(`${apiPrefix}/${apiVersion}`);
-
-  // Enable CORS
   app.enableCors({
     origin: corsOrigin === '*' ? true : corsOrigin.split(','),
     credentials: true,
   });
 
-  // Global validation pipe with Zod
   app.useGlobalPipes(new ZodValidationPipe());
 
-  // Swagger/OpenAPI documentation (only in development)
   if (nodeEnv === 'development') {
     const config = new DocumentBuilder()
       .setTitle('Happy Woman Bot API')
@@ -54,7 +45,6 @@ async function bootstrap() {
     logger.log(`Swagger documentation available at /docs`);
   }
 
-  // Graceful shutdown
   app.enableShutdownHooks();
 
   await app.listen(port);

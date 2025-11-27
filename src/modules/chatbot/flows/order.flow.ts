@@ -4,7 +4,6 @@ import { CartService } from '../../cart/cart.service';
 import { InvoiceService } from '../../orders/services/invoice.service';
 import { ReceiptService } from '../../orders/services/receipt.service';
 import { WaybillService } from '../../orders/services/waybill.service';
-import { WhatsappService } from '../../whatsapp/whatsapp.service';
 import { SendMessageDto } from '../../webhook/dto/whatsapp-webhook.dto';
 
 @Injectable()
@@ -17,7 +16,6 @@ export class OrderFlow {
     private readonly invoiceService: InvoiceService,
     private readonly receiptService: ReceiptService,
     private readonly waybillService: WaybillService,
-    private readonly whatsappService: WhatsappService,
   ) {}
 
   async requestDeliveryAddress(phoneNumber: string): Promise<SendMessageDto> {
@@ -35,26 +33,21 @@ export class OrderFlow {
     deliveryAddress: string,
   ): Promise<SendMessageDto[]> {
     try {
-      // Create order from cart (payment link will be generated after)
       const order = await this.ordersService.createOrderFromCart(
         userId,
         { deliveryAddress },
-        null, // Payment link will be generated after order creation
+        null,
       );
 
       if (!order) {
         throw new Error('Failed to create order');
       }
 
-      // Generate payment link with actual order ID
       const paymentLink = await this.generatePaymentLink(order.id);
-
-      // Update order with payment link
       await this.ordersService.updatePaymentLink(order.id, paymentLink);
 
       const messages: SendMessageDto[] = [];
 
-      // Generate and send invoice
       const invoice = this.invoiceService.generateInvoice(order);
       messages.push({
         to: phoneNumber,
@@ -63,7 +56,6 @@ export class OrderFlow {
         message: invoice,
       });
 
-      // Send payment link
       messages.push({
         to: phoneNumber,
         type: 'interactive',
@@ -87,8 +79,6 @@ export class OrderFlow {
         },
       });
 
-      // Store payment link in order (already done in createOrderFromCart)
-      // For now, we'll send it as a text message too
       messages.push({
         to: phoneNumber,
         type: 'text',
@@ -113,7 +103,6 @@ export class OrderFlow {
   }
 
   async generatePaymentLink(orderId: string): Promise<string> {
-    // Placeholder payment link generation
     return `https://payment.example.com/pay/${orderId}`;
   }
 
@@ -122,11 +111,9 @@ export class OrderFlow {
     orderId: string,
   ): Promise<SendMessageDto[]> {
     try {
-      // Update payment status
       await this.ordersService.updatePaymentStatus(orderId, 'PAID');
       await this.ordersService.updateStatus(orderId, 'CONFIRMED');
 
-      // Get order with items
       const order = await this.ordersService.findById(orderId);
       if (!order) {
         throw new Error('Order not found');
@@ -134,7 +121,6 @@ export class OrderFlow {
 
       const messages: SendMessageDto[] = [];
 
-      // Generate and send receipt
       const receipt = this.receiptService.generateReceipt(order);
       messages.push({
         to: phoneNumber,
@@ -143,7 +129,6 @@ export class OrderFlow {
         message: receipt,
       });
 
-      // Generate and send waybill
       const waybill = this.waybillService.generateWaybill(order);
       messages.push({
         to: phoneNumber,
@@ -152,7 +137,6 @@ export class OrderFlow {
         message: waybill,
       });
 
-      // Send success message with main menu
       messages.push({
         to: phoneNumber,
         type: 'text',

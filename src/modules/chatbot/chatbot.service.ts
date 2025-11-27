@@ -12,8 +12,7 @@ import { OrderFlow } from './flows/order.flow';
 export class ChatbotService {
   private readonly logger = new Logger(ChatbotService.name);
 
-  // Track users awaiting delivery address input
-  private readonly pendingOrders = new Map<string, string>(); // phone -> userId
+  private readonly pendingOrders = new Map<string, string>();
 
   constructor(
     private readonly usersService: UsersService,
@@ -36,8 +35,6 @@ export class ChatbotService {
       case 'interactive':
         return this.handleInteractiveMessage(message, senderPhone);
       case 'order':
-        // Log native WhatsApp Commerce order messages for debugging.
-        // These are separate from our custom cart/order flow.
         this.logger.debug(
           `Received WhatsApp ORDER message from ${senderPhone}: ${JSON.stringify(message, null, 2)}`,
         );
@@ -145,17 +142,14 @@ export class ChatbotService {
       return null;
     }
 
-    // Get user ID from phone number
     const user = await this.usersService.findByPhoneNumber(senderPhone);
     if (!user) {
-      // User not onboarded, send onboarding flow
       await this.onboardingFlow.sendOnboardingFlow(senderPhone);
       return null;
     }
 
     const userId = user.id;
 
-    // Check if this is a catalog product selection
     if (message?.context?.referred_product?.product_retailer_id) {
       const productRetailerId =
         message.context.referred_product.product_retailer_id;
@@ -166,7 +160,6 @@ export class ChatbotService {
       );
     }
 
-    // Handle cart-related buttons
     if (buttonId === 'view_cart' || buttonId === 'edit_cart') {
       return await this.cartFlow.showCart(senderPhone, userId);
     } else if (
@@ -182,7 +175,6 @@ export class ChatbotService {
         productRetailerId,
       );
     } else if (buttonId === 'place_order') {
-      // Request delivery address
       this.pendingOrders.set(senderPhone, userId);
       return await this.orderFlow.requestDeliveryAddress(senderPhone);
     } else if (buttonId.startsWith('payment_')) {

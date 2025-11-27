@@ -21,14 +21,12 @@ export class OrdersService {
     paymentLink: string | null,
   ) {
     try {
-      // Get cart summary
       const cart = await this.cartService.getCart(userId);
 
       if (cart.items.length === 0) {
         throw new Error('Cart is empty');
       }
 
-      // Create order
       const order = await this.ordersRepository.create(
         userId,
         cart.totalAmount,
@@ -40,7 +38,6 @@ export class OrdersService {
         throw new Error('Failed to create order');
       }
 
-      // Add order items with product snapshots
       for (const item of cart.items) {
         const price = parseFloat(item.product.price);
         const subtotal = price * item.quantity;
@@ -56,7 +53,6 @@ export class OrdersService {
         );
       }
 
-      // Clear cart
       await this.cartService.clearCart(userId);
 
       return await this.findById(order.id);
@@ -79,7 +75,6 @@ export class OrdersService {
       const itemsWithProducts = [];
 
       for (const item of items) {
-        // Use stored product snapshot (no API call needed)
         itemsWithProducts.push({
           id: item.id,
           productRetailerId: item.product_retailer_id,

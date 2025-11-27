@@ -15,7 +15,6 @@ export class CartFlow {
   ) {}
 
   showProductCatalog(phoneNumber: string): SendMessageDto {
-    // Send catalog message - Meta handles product display
     return {
       to: phoneNumber,
       type: 'catalog',

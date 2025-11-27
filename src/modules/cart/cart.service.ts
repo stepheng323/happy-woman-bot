@@ -20,12 +20,10 @@ export class CartService {
       let totalAmount = 0;
       let itemCount = 0;
 
-      // Collect all retailer IDs
       const retailerIds: string[] = cartItems.map(
         (item) => item.product_retailer_id as string,
       );
 
-      // Fetch all products in parallel
       const products = await this.catalogService.getProducts(retailerIds);
 
       for (const item of cartItems) {
@@ -79,7 +77,6 @@ export class CartService {
 
   async addItem(userId: string, data: AddToCartDto): Promise<void> {
     try {
-      // Verify product exists in catalog
       const product = await this.catalogService.getProduct(
         data.productRetailerId,
       );
