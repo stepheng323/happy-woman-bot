@@ -2,7 +2,7 @@ import { Global, Module } from '@nestjs/common';
 import { Kysely, PostgresDialect } from 'kysely';
 import { Pool } from 'pg';
 import { ConfigService } from '@nestjs/config';
-import { DB } from './types';
+import { DB } from '../../database/types';
 
 @Global()
 @Module({
