@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Kysely } from 'kysely';
 import { randomUUID } from 'crypto';
-import { DB } from '../../core/database/types';
+import { DB } from '../../database/types';
 
 export interface CreateUserDto {
   phoneNumber: string;

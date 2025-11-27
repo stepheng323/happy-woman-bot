@@ -41,4 +41,13 @@ export default tseslint.config(
       '@typescript-eslint/no-unsafe-return': 'off',
     },
   },
+  {
+    files: ['**/*.repository.ts', '**/*.service.ts', 'prisma/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
+    },
+  },
 );

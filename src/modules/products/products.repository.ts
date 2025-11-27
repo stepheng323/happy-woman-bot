@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Kysely } from 'kysely';
 import { randomUUID } from 'crypto';
-import { DB, Product } from '../../core/database/types';
+import { DB, Product } from '../../database/types';
 import { CreateProductDto, UpdateProductDto } from './dto/product.dto';
 
 @Injectable()
@@ -15,7 +15,7 @@ export class ProductsRepository {
       let query = this.db.selectFrom('products').selectAll();
 
       if (activeOnly) {
-        query = query.where('isActive', '=', true);
+        query = query.where('is_active', '=', true);
       }
 
       return await query.orderBy('name', 'asc').execute();
@@ -50,7 +50,7 @@ export class ProductsRepository {
         .selectFrom('products')
         .selectAll()
         .where('category', '=', category)
-        .where('isActive', '=', true)
+        .where('is_active', '=', true)
         .orderBy('name', 'asc')
         .execute();
     } catch (error) {
@@ -73,9 +73,9 @@ export class ProductsRepository {
           description: data.description || null,
           price: data.price.toString(),
           category: data.category || null,
-          imageUrl: data.imageUrl || null,
-          isActive: data.isActive ?? true,
-          updatedAt: new Date(),
+          image_url: data.imageUrl || null,
+          is_active: data.isActive ?? true,
+          updated_at: new Date(),
         })
         .execute();
 
@@ -100,8 +100,8 @@ export class ProductsRepository {
         description?: string | null;
         price?: string;
         category?: string | null;
-        imageUrl?: string | null;
-        isActive?: boolean;
+        image_url?: string | null;
+        is_active?: boolean;
         updatedAt: Date;
       } = {
         updatedAt: new Date(),
@@ -114,8 +114,8 @@ export class ProductsRepository {
       if (data.category !== undefined)
         updateData.category = data.category || null;
       if (data.imageUrl !== undefined)
-        updateData.imageUrl = data.imageUrl || null;
-      if (data.isActive !== undefined) updateData.isActive = data.isActive;
+        updateData.image_url = data.imageUrl || null;
+      if (data.isActive !== undefined) updateData.is_active = data.isActive;
 
       await this.db
         .updateTable('products')
