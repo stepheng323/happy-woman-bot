@@ -19,6 +19,7 @@ export const envSchema = z.object({
     .string()
     .url()
     .default('https://graph.facebook.com/v21.0'),
+  WHATSAPP_CATALOG_ID: z.string().optional(),
 
   // Meta App Secret (optional)
   META_APP_SECRET: z.string().optional(),
