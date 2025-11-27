@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const AddToCartSchema = z.object({
-  productId: z.string().uuid(),
+  productRetailerId: z.string().min(1),
   quantity: z.number().int().positive(),
 });
 
@@ -15,17 +15,19 @@ export type UpdateCartItemDto = z.infer<typeof UpdateCartItemSchema>;
 export interface CartItemWithProduct {
   id: string;
   userId: string;
-  productId: string;
+  productRetailerId: string;
   quantity: number;
   createdAt: Date;
   updatedAt: Date;
   product: {
-    id: string;
+    retailerId: string;
     name: string;
-    description: string | null;
+    description?: string;
     price: string;
-    category: string | null;
-    imageUrl: string | null;
+    currency: string;
+    category?: string;
+    imageUrl?: string;
+    availability: 'in stock' | 'out of stock' | 'preorder';
   };
 }
 

@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Kysely } from 'kysely';
 import { randomUUID } from 'crypto';
-import { DB } from '../../core/database/types';
+import { DB } from '../../database/types';
 import { AddToCartDto, UpdateCartItemDto } from './dto/cart.dto';
 
 @Injectable()
@@ -15,7 +15,7 @@ export class CartRepository {
       return await this.db
         .selectFrom('cart')
         .selectAll()
-        .where('userId', '=', userId)
+        .where('user_id', '=', userId)
         .execute();
     } catch (error) {
       this.logger.error(
@@ -26,13 +26,16 @@ export class CartRepository {
     }
   }
 
-  async findByUserIdAndProductId(userId: string, productId: string) {
+  async findByUserIdAndProductRetailerId(
+    userId: string,
+    productRetailerId: string,
+  ) {
     try {
       return await this.db
         .selectFrom('cart')
         .selectAll()
-        .where('userId', '=', userId)
-        .where('productId', '=', productId)
+        .where('user_id', '=', userId)
+        .where('product_retailer_id', '=', productRetailerId)
         .executeTakeFirst();
     } catch (error) {
       this.logger.error(
@@ -46,9 +49,9 @@ export class CartRepository {
   async addItem(userId: string, data: AddToCartDto) {
     try {
       // Check if item already exists in cart
-      const existing = await this.findByUserIdAndProductId(
+      const existing = await this.findByUserIdAndProductRetailerId(
         userId,
-        data.productId,
+        data.productRetailerId,
       );
 
       if (existing) {
@@ -57,10 +60,10 @@ export class CartRepository {
           .updateTable('cart')
           .set({
             quantity: existing.quantity + data.quantity,
-            updatedAt: new Date(),
+            updated_at: new Date(),
           })
-          .where('userId', '=', userId)
-          .where('productId', '=', data.productId)
+          .where('user_id', '=', userId)
+          .where('product_retailer_id', '=', data.productRetailerId)
           .execute();
       } else {
         // Create new cart item
@@ -68,10 +71,10 @@ export class CartRepository {
           .insertInto('cart')
           .values({
             id: randomUUID(),
-            userId,
-            productId: data.productId,
+            user_id: userId,
+            product_retailer_id: data.productRetailerId,
             quantity: data.quantity,
-            updatedAt: new Date(),
+            updated_at: new Date(),
           })
           .execute();
       }
@@ -84,16 +87,20 @@ export class CartRepository {
     }
   }
 
-  async updateItem(userId: string, productId: string, data: UpdateCartItemDto) {
+  async updateItem(
+    userId: string,
+    productRetailerId: string,
+    data: UpdateCartItemDto,
+  ) {
     try {
       return await this.db
         .updateTable('cart')
         .set({
           quantity: data.quantity,
-          updatedAt: new Date(),
+          updated_at: new Date(),
         })
-        .where('userId', '=', userId)
-        .where('productId', '=', productId)
+        .where('user_id', '=', userId)
+        .where('product_retailer_id', '=', productRetailerId)
         .execute();
     } catch (error) {
       this.logger.error(
@@ -104,12 +111,12 @@ export class CartRepository {
     }
   }
 
-  async removeItem(userId: string, productId: string) {
+  async removeItem(userId: string, productRetailerId: string) {
     try {
       return await this.db
         .deleteFrom('cart')
-        .where('userId', '=', userId)
-        .where('productId', '=', productId)
+        .where('user_id', '=', userId)
+        .where('product_retailer_id', '=', productRetailerId)
         .execute();
     } catch (error) {
       this.logger.error(
@@ -124,7 +131,7 @@ export class CartRepository {
     try {
       return await this.db
         .deleteFrom('cart')
-        .where('userId', '=', userId)
+        .where('user_id', '=', userId)
         .execute();
     } catch (error) {
       this.logger.error(

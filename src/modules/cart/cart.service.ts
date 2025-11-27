@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { CartRepository } from './cart.repository';
-import { ProductsService } from '../products/products.service';
+import { CatalogService } from '../catalog/catalog.service';
 import { AddToCartDto, UpdateCartItemDto, CartSummary } from './dto/cart.dto';
 
 @Injectable()
@@ -9,7 +9,7 @@ export class CartService {
 
   constructor(
     private readonly cartRepository: CartRepository,
-    private readonly productsService: ProductsService,
+    private readonly catalogService: CatalogService,
   ) {}
 
   async getCart(userId: string): Promise<CartSummary> {
@@ -20,11 +20,20 @@ export class CartService {
       let totalAmount = 0;
       let itemCount = 0;
 
+      // Collect all retailer IDs
+      const retailerIds: string[] = cartItems.map(
+        (item) => item.product_retailer_id as string,
+      );
+
+      // Fetch all products in parallel
+      const products = await this.catalogService.getProducts(retailerIds);
+
       for (const item of cartItems) {
-        const product = await this.productsService.findById(item.productId);
+        const retailerId = item.product_retailer_id as string;
+        const product = products.get(retailerId);
         if (!product) {
           this.logger.warn(
-            `Product ${item.productId} not found, skipping cart item`,
+            `Product with retailer_id ${item.product_retailer_id} not found, skipping cart item`,
           );
           continue;
         }
@@ -34,18 +43,20 @@ export class CartService {
 
         items.push({
           id: item.id,
-          userId: item.userId,
-          productId: item.productId,
+          userId: item.user_id,
+          productRetailerId: item.product_retailer_id,
           quantity: item.quantity,
-          createdAt: item.createdAt,
-          updatedAt: item.updatedAt,
+          createdAt: item.created_at,
+          updatedAt: item.updated_at,
           product: {
-            id: product.id,
+            retailerId: product.retailer_id,
             name: product.name,
             description: product.description,
             price: product.price,
+            currency: product.currency,
             category: product.category,
-            imageUrl: product.imageUrl,
+            imageUrl: product.image_url,
+            availability: product.availability,
           },
         });
 
@@ -68,13 +79,15 @@ export class CartService {
 
   async addItem(userId: string, data: AddToCartDto): Promise<void> {
     try {
-      // Verify product exists and is active
-      const product = await this.productsService.findById(data.productId);
+      // Verify product exists in catalog
+      const product = await this.catalogService.getProduct(
+        data.productRetailerId,
+      );
       if (!product) {
-        throw new Error('Product not found');
+        throw new Error('Product not found in catalog');
       }
-      if (!product.isActive) {
-        throw new Error('Product is not available');
+      if (product.availability === 'out of stock') {
+        throw new Error('Product is out of stock');
       }
 
       await this.cartRepository.addItem(userId, data);
@@ -88,11 +101,11 @@ export class CartService {
 
   async updateItem(
     userId: string,
-    productId: string,
+    productRetailerId: string,
     data: UpdateCartItemDto,
   ): Promise<void> {
     try {
-      await this.cartRepository.updateItem(userId, productId, data);
+      await this.cartRepository.updateItem(userId, productRetailerId, data);
     } catch (error) {
       this.logger.error(
         `Failed to update cart item: ${error instanceof Error ? error.message : String(error)}`,
@@ -101,9 +114,9 @@ export class CartService {
     }
   }
 
-  async removeItem(userId: string, productId: string): Promise<void> {
+  async removeItem(userId: string, productRetailerId: string): Promise<void> {
     try {
-      await this.cartRepository.removeItem(userId, productId);
+      await this.cartRepository.removeItem(userId, productRetailerId);
     } catch (error) {
       this.logger.error(
         `Failed to remove cart item: ${error instanceof Error ? error.message : String(error)}`,
