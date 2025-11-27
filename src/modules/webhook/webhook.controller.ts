@@ -44,7 +44,9 @@ export class WebhookController {
   @ApiOperation({ summary: 'Handle WhatsApp webhook events' })
   @ApiResponse({ status: 200, description: 'Webhook processed successfully' })
   async handleWebhook(
-    @Body() payload: WhatsappWebhookDto,
+    // NOTE: Using loose typing here to avoid 400s when Meta changes webhook payloads.
+    // The payload is validated/parsed later in the processing pipeline.
+    @Body() payload: any,
   ): Promise<{ status: string }> {
     this.logger.log('Received webhook payload, adding to queue');
 

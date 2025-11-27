@@ -41,9 +41,8 @@ export class FlowMessagingService {
     };
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
       await this.whatsappService.sendMessage(welcomeMessage);
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+
       await this.whatsappService.sendMessage(mainMenu);
     } catch (error) {
       this.logger.error(
