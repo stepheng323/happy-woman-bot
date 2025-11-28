@@ -27,9 +27,19 @@ export class OrdersService {
         throw new Error('Cart is empty');
       }
 
+      const numericTotal = Number(cart.totalAmount);
+      if (!Number.isFinite(numericTotal) || numericTotal <= 0) {
+        this.logger.error(
+          `Invalid cart total amount: raw=${cart.totalAmount}, numeric=${numericTotal}, items=${cart.items.length}`,
+        );
+        throw new Error(
+          `Cannot create order: cart total is invalid (${cart.totalAmount}). Please ensure all products in your cart are available and have valid prices.`,
+        );
+      }
+
       const order = await this.ordersRepository.create(
         userId,
-        cart.totalAmount,
+        numericTotal,
         data.deliveryAddress,
         paymentLink,
       );
