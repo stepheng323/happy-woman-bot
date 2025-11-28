@@ -26,11 +26,6 @@ export class BasicInfoHandler {
       allRequestKeys: Object.keys(request),
     });
 
-    // When user first loads the screen, data is empty - just return the screen
-    // When user clicks "Next" with data_exchange, WhatsApp should send form data in request.data
-    // If data is empty and action is data_exchange, it means form wasn't filled or data wasn't sent
-
-    // Check if this is an initial load (no action, empty data)
     const isInitialLoad = !action && (!data || Object.keys(data).length === 0);
 
     if (isInitialLoad) {
@@ -42,8 +37,6 @@ export class BasicInfoHandler {
       };
     }
 
-    // For data_exchange action, the form data should be in request.data
-    // If it's still empty, log a warning but proceed with validation
     if (
       action === 'data_exchange' &&
       (!data || Object.keys(data).length === 0)
@@ -61,7 +54,6 @@ export class BasicInfoHandler {
 
     const errors: Record<string, string> = {};
 
-    // Extract and validate business name (required field)
     const businessName =
       typeof data.business_name === 'string' ? data.business_name.trim() : '';
     if (!businessName) {
@@ -70,7 +62,6 @@ export class BasicInfoHandler {
       errors.business_name = 'Business name must be at least 2 characters';
     }
 
-    // Extract and validate contact person (required field)
     const contactPerson =
       typeof data.contact_person === 'string' ? data.contact_person.trim() : '';
     if (!contactPerson) {
@@ -79,7 +70,6 @@ export class BasicInfoHandler {
       errors.contact_person = 'Name must be at least 2 characters';
     }
 
-    // Extract and validate email (required field)
     const email = typeof data.email === 'string' ? data.email.trim() : '';
     if (!email) {
       errors.email = 'Email address is required';
@@ -95,7 +85,6 @@ export class BasicInfoHandler {
       }
     }
 
-    // If there are validation errors, return them (stay on current screen)
     if (Object.keys(errors).length > 0) {
       this.logger.debug('Validation errors found', { errors });
       return {
@@ -108,7 +97,6 @@ export class BasicInfoHandler {
       };
     }
 
-    // All validation passed - navigate to next screen
     this.logger.log(
       'Basic info validated successfully, navigating to ADDITIONAL_INFO',
       {
@@ -118,8 +106,6 @@ export class BasicInfoHandler {
       },
     );
 
-    // Return response to navigate to ADDITIONAL_INFO screen
-    // Pass validated data to the next screen
     return {
       version: request.version,
       screen: 'ADDITIONAL_INFO',

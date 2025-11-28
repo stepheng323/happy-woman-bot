@@ -5,7 +5,7 @@ import { RedisService } from '../../core/redis/redis.service';
 @Injectable()
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
-  private readonly CACHE_TTL = 3600; // 1 hour
+  private readonly CACHE_TTL = 3600;
 
   constructor(
     private readonly usersRepository: UsersRepository,

@@ -50,7 +50,7 @@ export class FlowCryptoService {
       try {
         pem = fs.readFileSync(defaultPath, 'utf8');
       } catch {
-        // ignore, will error later if still missing
+
       }
     }
 

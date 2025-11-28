@@ -1,7 +1,3 @@
-/**
- * WhatsApp Flow types
- * Based on WhatsApp Flow API
- */
 
 export interface Envelope {
   encrypted_aes_key: string;

@@ -39,8 +39,7 @@ export class FlowProcessorService {
   }
 
   private isHealthCheckRequest(request: DecryptedRequest): boolean {
-    // Health check requests have empty screen AND empty data
-    // If screen is explicitly set to BASIC_INFO or ADDITIONAL_INFO, it's NOT a health check
+
     if (
       request.screen === 'BASIC_INFO' ||
       request.screen === 'ADDITIONAL_INFO'
@@ -54,7 +53,6 @@ export class FlowProcessorService {
       (typeof request.data === 'object' &&
         Object.keys(request.data).length === 0);
 
-    // Only treat as health check if BOTH screen and data are empty
     return hasEmptyScreen && hasEmptyData;
   }
 

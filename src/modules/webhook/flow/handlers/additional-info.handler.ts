@@ -26,11 +26,6 @@ export class AdditionalInfoHandler {
       allRequestKeys: Object.keys(request),
     });
 
-    // With data_exchange action, WhatsApp sends form data when user clicks "Complete"
-    // When user clicks "Complete", WhatsApp sends all data from both screens
-    // This is where we validate and create the user
-
-    // Check if this is an initial load (no action, empty data)
     const data = request.data || {};
     const isInitialLoad = !action && (!data || Object.keys(data).length === 0);
 
@@ -38,16 +33,27 @@ export class AdditionalInfoHandler {
       this.logger.debug(
         'Initial ADDITIONAL_INFO screen load - returning screen with data from BASIC_INFO',
       );
-      // Return the screen with data from BASIC_INFO (passed from previous screen)
+
       return {
         version: request.version,
         screen: request.screen,
         data: data,
       };
     }
+
+    if (action !== 'data_exchange') {
+      this.logger.debug(
+        'Action is not data_exchange, returning current screen',
+      );
+      return {
+        version: request.version,
+        screen: request.screen,
+        data: data,
+      };
+    }
+
     const errors: Record<string, string> = {};
 
-    // Extract phone number from flow_token
     const phoneNumber = this.flowTokenService.extractPhoneNumberFromToken(
       request.flow_token,
     );
@@ -146,6 +152,11 @@ export class AdditionalInfoHandler {
 
       this.logger.log(`User created successfully: ${phoneNumber}`);
 
+      const version =
+        typeof request.version === 'string'
+          ? request.version
+          : String(request.version || '3.0');
+
       this.flowMessagingService
         .sendOnboardingSuccessMessages(phoneNumber)
         .catch((error) => {
@@ -154,18 +165,10 @@ export class AdditionalInfoHandler {
           );
         });
 
-      const version =
-        typeof request.version === 'string'
-          ? request.version
-          : String(request.version || '3.0');
-
       return {
         version: version,
-        screen: request.screen,
-        data: {
-          success: true,
-          message: 'Onboarding completed successfully',
-        },
+        screen: 'SUCCESS',
+        data: {},
       };
     } catch (error) {
       this.logger.error(

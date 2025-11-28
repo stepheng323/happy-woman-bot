@@ -89,8 +89,6 @@ export class UsersRepository {
         `Database connection error while checking user existence: ${error instanceof Error ? error.message : String(error)}`,
         error instanceof Error ? error.stack : undefined,
       );
-      // Return false on connection error to allow processing to continue
-      // The service will handle this gracefully
       throw error;
     }
   }

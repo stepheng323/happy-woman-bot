@@ -64,7 +64,7 @@ export class FlowController {
         action: (payload as any).action,
         allPayloadKeys: Object.keys(payload),
         fullPayload: JSON.stringify(payload, null, 2),
-        // Check if form fields are at top level
+
         hasBusinessName: !!(payload as any).business_name,
         hasContactPerson: !!(payload as any).contact_person,
         hasEmail: !!(payload as any).email,

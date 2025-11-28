@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import { createZodDto } from 'nestjs-zod';
 
-// WhatsApp Message Schema
 const MessageSchema = z.object({
   from: z.string(),
   id: z.string(),
@@ -16,7 +15,7 @@ const MessageSchema = z.object({
     'contacts',
     'sticker',
     'interactive',
-    // Native WhatsApp commerce order messages
+
     'order',
   ]),
   text: z
@@ -105,7 +104,6 @@ const MessageSchema = z.object({
     .optional(),
 });
 
-// WhatsApp Contact Schema
 const ContactSchema = z.object({
   profile: z.object({
     name: z.string(),
@@ -113,13 +111,11 @@ const ContactSchema = z.object({
   wa_id: z.string(),
 });
 
-// WhatsApp Metadata Schema
 const MetadataSchema = z.object({
   display_phone_number: z.string(),
   phone_number_id: z.string(),
 });
 
-// WhatsApp Value Schema
 const WebhookValueSchema = z.object({
   messaging_product: z.string(),
   metadata: MetadataSchema,
@@ -152,19 +148,16 @@ const WebhookValueSchema = z.object({
     .optional(),
 });
 
-// WhatsApp Change Schema
 const ChangeSchema = z.object({
   value: WebhookValueSchema,
   field: z.string(),
 });
 
-// WhatsApp Entry Schema
 const EntrySchema = z.object({
   id: z.string(),
   changes: z.array(ChangeSchema),
 });
 
-// Main WhatsApp Webhook Schema
 export const WhatsappWebhookSchema = z.object({
   object: z.string(),
   entry: z.array(EntrySchema),
@@ -172,7 +165,6 @@ export const WhatsappWebhookSchema = z.object({
 
 export class WhatsappWebhookDto extends createZodDto(WhatsappWebhookSchema) {}
 
-// Response DTO for sending messages
 export const SendMessageSchema = z.object({
   to: z.string().min(1),
   type: z
@@ -189,6 +181,5 @@ export const SendMessageSchema = z.object({
 
 export class SendMessageDto extends createZodDto(SendMessageSchema) {}
 
-// Extracted message type for easier processing
 export type WhatsappMessage = z.infer<typeof MessageSchema>;
 export type WhatsappContact = z.infer<typeof ContactSchema>;

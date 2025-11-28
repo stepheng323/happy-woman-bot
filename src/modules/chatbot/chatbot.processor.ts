@@ -66,18 +66,32 @@ export class ChatbotProcessor extends WorkerHost {
             const messagesToSend = Array.isArray(response)
               ? response
               : [response];
-            for (const msg of messagesToSend) {
+            this.logger.log(
+              `[MESSAGE SEND] Processing ${messagesToSend.length} message(s) for ${senderPhone}`,
+            );
+            for (let i = 0; i < messagesToSend.length; i++) {
+              const msg = messagesToSend[i];
               try {
+                this.logger.log(
+                  `[MESSAGE SEND] Sending message ${i + 1}/${messagesToSend.length} to ${senderPhone}, type: ${msg.type}`,
+                );
                 await this.whatsappService.sendMessage(msg);
+                this.logger.log(
+                  `[MESSAGE SEND] Successfully sent message ${i + 1}/${messagesToSend.length} to ${senderPhone}`,
+                );
               } catch (sendError) {
                 this.logger.error(
-                  `Failed to send message to ${senderPhone}: ${sendError instanceof Error ? sendError.message : String(sendError)}`,
+                  `[MESSAGE SEND] Failed to send message ${i + 1}/${messagesToSend.length} to ${senderPhone}: ${sendError instanceof Error ? sendError.message : String(sendError)}`,
                   sendError instanceof Error ? sendError.stack : undefined,
                 );
               }
             }
             this.logger.log(
-              `Sent ${messagesToSend.length} replies to ${senderPhone}`,
+              `[MESSAGE SEND] Completed sending ${messagesToSend.length} reply(ies) to ${senderPhone}`,
+            );
+          } else {
+            this.logger.debug(
+              `[MESSAGE SEND] No response returned from processMessage for ${senderPhone}`,
             );
           }
         } catch (messageError) {

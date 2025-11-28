@@ -53,7 +53,7 @@ export type User = {
     businessName: string;
     contactPerson: string;
     email: string;
-    address: string;
+    address: string | null;
     natureOfBusiness: string;
     registrationNumber: string;
     createdAt: Generated<Timestamp>;
