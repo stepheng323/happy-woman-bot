@@ -57,7 +57,6 @@ export class WhatsappService {
     } else if (messageData.type === 'template') {
       payload.template = messageData.template;
     } else if (messageData.type === 'catalog') {
-      // Catalog messages are sent as interactive messages with type 'catalog'
       const catalogId = messageData.catalog_id || this.catalogId;
       if (!catalogId) {
         throw new HttpException(
@@ -214,6 +213,200 @@ export class WhatsappService {
       throw new HttpException(
         'Failed to send WhatsApp flow',
         HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * Upload a media file (e.g. PDF invoice) to WhatsApp and return its media ID.
+   */
+  async uploadMedia(
+    data: Buffer,
+    filename: string,
+    mimeType: string,
+  ): Promise<string> {
+    const url = `${this.apiUrl}/${this.phoneNumberId}/media`;
+
+    try {
+      const formData = new FormData();
+      const fileBytes = new Uint8Array(data);
+      const blob = new Blob([fileBytes], { type: mimeType });
+      formData.append('file', blob, filename);
+      formData.append('messaging_product', 'whatsapp');
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.accessToken}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = (await response.json().catch(() => ({}))) as {
+          error?: { message?: string };
+        };
+        this.logger.error(
+          `Failed to upload media: ${JSON.stringify(errorData)}`,
+        );
+        throw new HttpException(
+          `Failed to upload media: ${
+            errorData.error?.message || response.statusText
+          }`,
+          response.status || HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
+
+      const dataJson = (await response.json()) as { id?: string };
+      if (!dataJson.id) {
+        this.logger.error(
+          `Media upload succeeded but no media ID returned: ${JSON.stringify(
+            dataJson,
+          )}`,
+        );
+        throw new HttpException(
+          'Failed to upload media: no media ID returned',
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
+
+      this.logger.log(
+        `Media uploaded successfully: mediaId=${dataJson.id}, filename=${filename}`,
+      );
+      return dataJson.id;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      this.logger.error(
+        `Error uploading media: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+      throw new HttpException(
+        'Failed to upload media',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * Send a PDF invoice (or any document) as a WhatsApp document message.
+   */
+  async sendDocument(
+    to: string,
+    filename: string,
+    data: Buffer,
+    mimeType = 'application/pdf',
+    caption?: string,
+  ): Promise<void> {
+    const mediaId = await this.uploadMedia(data, filename, mimeType);
+    const url = `${this.apiUrl}/${this.phoneNumberId}/messages`;
+
+    const payload: any = {
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      to,
+      type: 'document',
+      document: {
+        id: mediaId,
+        filename,
+      },
+    };
+
+    if (caption) {
+      payload.document.caption = caption;
+    }
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${this.accessToken}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorData = (await response.json().catch(() => ({}))) as {
+          error?: { message?: string };
+        };
+        this.logger.error(
+          `Failed to send document: ${JSON.stringify(errorData)}`,
+        );
+        throw new HttpException(
+          `Failed to send WhatsApp document: ${
+            errorData.error?.message || response.statusText
+          }`,
+          response.status || HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
+
+      const dataJson = (await response.json()) as {
+        messages?: Array<{ id?: string }>;
+      };
+      this.logger.log(
+        `Document sent successfully to ${to}: ${dataJson.messages?.[0]?.id}`,
+      );
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      this.logger.error(
+        `Error sending document: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+      throw new HttpException(
+        'Failed to send WhatsApp document',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * Best-effort typing indicator: mark the incoming message as read.
+   * WhatsApp Cloud API doesn't expose a true typing bubble, but marking
+   * the message as read gives immediate feedback that the bot is active.
+   */
+  async sendTyping(_to: string, messageId: string): Promise<void> {
+    const url = `${this.apiUrl}/${this.phoneNumberId}/messages`;
+
+    const payload = {
+      messaging_product: 'whatsapp',
+      status: 'read',
+      message_id: messageId,
+      typing_indicator: { type: 'text' },
+    };
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${this.accessToken}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorData = (await response.json().catch(() => ({}))) as {
+          error?: { message?: string };
+        };
+        this.logger.warn(
+          `Failed to send typing/read indicator: ${JSON.stringify(errorData)}`,
+        );
+      } else {
+        this.logger.debug(
+          `Typing/read indicator sent for messageId=${messageId}`,
+        );
+      }
+    } catch (error) {
+      this.logger.warn(
+        `Error sending typing/read indicator: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
       );
     }
   }
