@@ -23,7 +23,7 @@ model User {
   businessName       String
   contactPerson      String
   email              String   @unique
-  address            String
+  address            String?
   natureOfBusiness   String
   registrationNumber String
   createdAt          DateTime @default(now())
