@@ -1,7 +1,10 @@
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { WebhookController } from './webhook.controller';
+import { PaymentWebhookController } from './payment-webhook.controller';
 import { WhatsappModule } from '../whatsapp/whatsapp.module';
+import { PaymentsModule } from '../payments/payments.module';
+import { OrdersModule } from '../orders/orders.module';
 import { FlowController } from './flow/flow.controller';
 import { FlowCryptoService } from './flow/flow-crypto.service';
 import { FlowProcessorService } from './flow/flow-processor.service';
@@ -14,12 +17,14 @@ import { UsersModule } from '../users/users.module';
 @Module({
   imports: [
     WhatsappModule,
+    PaymentsModule,
+    OrdersModule,
     UsersModule,
     BullModule.registerQueue({
       name: 'webhook-queue',
     }),
   ],
-  controllers: [WebhookController, FlowController],
+  controllers: [WebhookController, PaymentWebhookController, FlowController],
   providers: [
     FlowCryptoService,
     FlowProcessorService,
