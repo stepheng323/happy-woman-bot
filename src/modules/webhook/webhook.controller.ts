@@ -43,12 +43,29 @@ export class WebhookController {
   @HttpCode(200)
   @ApiOperation({ summary: 'Handle WhatsApp webhook events' })
   @ApiResponse({ status: 200, description: 'Webhook processed successfully' })
-  async handleWebhook(
-    // NOTE: Using loose typing here to avoid 400s when Meta changes webhook payloads.
-    // The payload is validated/parsed later in the processing pipeline.
-    @Body() payload: any,
-  ): Promise<{ status: string }> {
+  async handleWebhook(@Body() payload: any): Promise<{ status: string }> {
     this.logger.log('Received webhook payload, adding to queue');
+
+    try {
+      const message = payload?.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
+      if (message?.from && message?.id) {
+        this.whatsappService
+          .sendTyping(message.from, message.id)
+          .catch((err: unknown) => {
+            this.logger.warn(
+              `Failed to send immediate typing indicator: ${
+                err instanceof Error ? err.message : String(err)
+              }`,
+            );
+          });
+      }
+    } catch (error) {
+      this.logger.warn(
+        `Error processing immediate typing indicator: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
 
     try {
       await this.webhookQueue.add('process-webhook', payload, {
@@ -59,7 +76,9 @@ export class WebhookController {
       return { status: 'ok' };
     } catch (error) {
       this.logger.error(
-        `Error adding webhook to queue: ${error instanceof Error ? error.message : String(error)}`,
+        `Error adding webhook to queue: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
       );
       return { status: 'ok' };
     }
