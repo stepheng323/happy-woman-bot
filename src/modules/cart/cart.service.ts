@@ -21,7 +21,7 @@ export class CartService {
       let itemCount = 0;
 
       const retailerIds: string[] = cartItems.map(
-        (item) => item.product_retailer_id as string,
+        (item) => item.product_retailer_id,
       );
 
       const products = await this.catalogService.getProducts(retailerIds);
@@ -29,7 +29,7 @@ export class CartService {
       const invalidRetailerIds: string[] = [];
 
       for (const item of cartItems) {
-        const retailerId = item.product_retailer_id as string;
+        const retailerId = item.product_retailer_id;
         const product = products.get(retailerId);
         if (!product) {
           this.logger.warn(

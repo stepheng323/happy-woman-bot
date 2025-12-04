@@ -37,7 +37,6 @@ export class FlowProcessorService {
   }
 
   private isHealthCheckRequest(request: DecryptedRequest): boolean {
-
     if (
       request.screen === 'BASIC_INFO' ||
       request.screen === 'ADDITIONAL_INFO'
@@ -65,7 +64,6 @@ export class FlowProcessorService {
   }
 
   private handleDefaultScreen(request: DecryptedRequest): FlowResponse {
-
     return {
       version: request.version,
       screen: request.screen,

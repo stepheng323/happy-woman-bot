@@ -1,4 +1,3 @@
-
 export interface Envelope {
   encrypted_aes_key: string;
   encrypted_flow_data: string;

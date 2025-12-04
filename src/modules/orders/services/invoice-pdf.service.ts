@@ -105,7 +105,6 @@ export class InvoicePdfService {
 
       for (const item of order.items) {
         if (cursorY < 120) {
-
           cursorY = height - margin - 80;
         }
 
@@ -119,8 +118,7 @@ export class InvoicePdfService {
           (item.subtotal ?? unitPrice * quantity).toString(),
         );
 
-        const baseName =
-          item.productName || item.productRetailerId || 'Item';
+        const baseName = item.productName || item.productRetailerId || 'Item';
 
         const maxItemWidth = colQtyX - colItemX - 8;
         let itemName = baseName;

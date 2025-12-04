@@ -138,6 +138,12 @@ export class ChatbotService {
       return menuSelection;
     }
 
+    // Check for common greetings
+    const greetingResponse = this.handleGreeting(text, senderPhone);
+    if (greetingResponse) {
+      return greetingResponse;
+    }
+
     try {
       return this.handleUnexpectedInput(text, senderPhone);
     } catch (error) {
@@ -194,12 +200,50 @@ export class ChatbotService {
     }
   }
 
+  private handleGreeting(
+    text: string,
+    senderPhone: string,
+  ): SendMessageDto | SendMessageDto[] | null {
+    const normalizedText = text.trim().toLowerCase();
+
+    const greetings = [
+      'hi',
+      'hello',
+      'hey',
+      'hey there',
+      'hi there',
+      'hello there',
+      'good morning',
+      'good afternoon',
+      'good evening',
+      'greetings',
+      'sup',
+      "what's up",
+      'whats up',
+      'howdy',
+      'hola',
+      'bonjour',
+    ];
+
+    if (greetings.includes(normalizedText)) {
+      return [
+        {
+          to: senderPhone,
+          type: 'text',
+          preview_url: false,
+          message: 'Hello! 👋 Welcome to HappyWoman Commerce!',
+        },
+        this.onboardingFlow.getMainMenu(senderPhone),
+      ];
+    }
+
+    return null;
+  }
 
   private handleUnexpectedInput(
     text: string,
     senderPhone: string,
   ): SendMessageDto | SendMessageDto[] {
-    // Log unexpected input for monitoring (truncate if too long)
     const logText = text.length > 100 ? `${text.substring(0, 100)}...` : text;
     this.logger.warn(
       `[UNEXPECTED INPUT] Received unexpected text from ${senderPhone}: "${logText}"`,
@@ -281,7 +325,6 @@ export class ChatbotService {
       const userAddress = user?.address || null;
 
       if (userAddress) {
-
         this.pendingOrders.set(senderPhone, {
           userId,
           state: 'address_confirmation',
@@ -443,7 +486,6 @@ export class ChatbotService {
       for (const item of orderData.product_items) {
         const productRetailerId = String(item.product_retailer_id);
         const quantity = Number(item.quantity) || 1;
-
 
         await this.cartFlow.handleAddToCart(
           senderPhone,

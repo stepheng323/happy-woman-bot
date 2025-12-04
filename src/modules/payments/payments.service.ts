@@ -61,11 +61,13 @@ export class PaymentsService {
         this.logger.error(
           `Invalid amount for Paystack: raw=${amount}, numeric=${numericAmount}`,
         );
-        throw new Error('Invalid order amount for payment. Amount must be > 0.');
+        throw new Error(
+          'Invalid order amount for payment. Amount must be > 0.',
+        );
       }
 
       const amountInKobo = Math.round(numericAmount * 100);
-      
+
       const callbackUrl = this.appBaseUrl
         ? `${this.appBaseUrl}/webhook/payment/verify`
         : undefined;
@@ -162,9 +164,7 @@ export class PaymentsService {
         this.logger.error(
           `Paystack verify API error: ${response.status} - ${errorText}`,
         );
-        throw new Error(
-          `Failed to verify payment: ${response.statusText}`,
-        );
+        throw new Error(`Failed to verify payment: ${response.statusText}`);
       }
 
       const data = (await response.json()) as PaystackVerifyResponse;

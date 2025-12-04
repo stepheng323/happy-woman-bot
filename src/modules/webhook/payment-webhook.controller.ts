@@ -71,7 +71,7 @@ export class PaymentWebhookController {
 
       const order = await this.ordersService.findById(reference);
       if (order && verification.metadata?.phoneNumber) {
-        const phoneNumber = verification.metadata.phoneNumber as string;
+        const phoneNumber = verification.metadata.phoneNumber;
 
         const user = await this.usersService.findByPhoneNumber(phoneNumber);
         const customerName =
@@ -175,4 +175,3 @@ Please reply with the number (1, 2, or 3).`,
     }
   }
 }
-

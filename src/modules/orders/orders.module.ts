@@ -8,7 +8,12 @@ import { CatalogModule } from '../catalog/catalog.module';
 
 @Module({
   imports: [CartModule, CatalogModule],
-  providers: [OrdersRepository, OrdersService, InvoicePdfService, ReceiptPdfService],
+  providers: [
+    OrdersRepository,
+    OrdersService,
+    InvoicePdfService,
+    ReceiptPdfService,
+  ],
   exports: [OrdersService, InvoicePdfService, ReceiptPdfService],
 })
 export class OrdersModule {}

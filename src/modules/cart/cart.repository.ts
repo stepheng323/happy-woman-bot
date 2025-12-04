@@ -48,14 +48,12 @@ export class CartRepository {
 
   async addItem(userId: string, data: AddToCartDto) {
     try {
-
       const existing = await this.findByUserIdAndProductRetailerId(
         userId,
         data.productRetailerId,
       );
 
       if (existing) {
-
         return await this.db
           .updateTable('cart')
           .set({
@@ -66,7 +64,6 @@ export class CartRepository {
           .where('product_retailer_id', '=', data.productRetailerId)
           .execute();
       } else {
-
         return await this.db
           .insertInto('cart')
           .values({

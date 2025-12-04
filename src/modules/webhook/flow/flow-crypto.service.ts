@@ -20,7 +20,7 @@ export class FlowCryptoService {
   private getPrivateKey(): crypto.KeyObject {
     // Priority order: BASE64 > PEM > PATH > default file
     // This order prioritizes env vars (Render-friendly) over file paths
-    
+
     const base64 =
       this.configService.get('META_FLOW_PRIVATE_KEY_BASE64', { infer: true }) ||
       '';
