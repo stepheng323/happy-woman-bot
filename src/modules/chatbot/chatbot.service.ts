@@ -61,30 +61,67 @@ export class ChatbotService {
 
     const text = message.text.body.trim();
 
+    if (!text || text.length === 0) {
+      this.logger.debug(`Empty text message received from ${senderPhone}`);
+      return null;
+    }
+
     const pendingOrder = this.pendingOrders.get(senderPhone);
-    if (pendingOrder && text.length > 0) {
-      this.logger.log(
-        `[ORDER FLOW] Text message received while pending order exists: state=${pendingOrder.state}, text="${text.substring(0, 50)}..."`,
-      );
+    if (pendingOrder) {
       if (pendingOrder.state === 'address_confirmation') {
-        this.logger.log(
-          `[ORDER FLOW] Ignoring text during address confirmation state`,
-        );
-        return null;
+        const normalizedText = text.trim().toLowerCase();
+        if (normalizedText === 'cancel' || normalizedText === 'back') {
+          this.pendingOrders.delete(senderPhone);
+          return [
+            {
+              to: senderPhone,
+              type: 'text',
+              preview_url: false,
+              message: 'Order cancelled. You can start a new order anytime.',
+            },
+            this.onboardingFlow.getMainMenu(senderPhone),
+          ];
+        }
+
+        return {
+          to: senderPhone,
+          type: 'text',
+          preview_url: false,
+          message:
+            'Please use the buttons above to confirm or change your delivery address. If you want to cancel, reply "cancel".',
+        };
       }
 
       if (pendingOrder.state === 'address_input') {
-        this.logger.log(
-          `[ORDER FLOW] Address input received: "${text}", proceeding with order placement`,
-        );
+        if (text.length < 10) {
+          return {
+            to: senderPhone,
+            type: 'text',
+            preview_url: false,
+            message:
+              'Please provide a complete delivery address (at least 10 characters). If you want to cancel, reply "cancel".',
+          };
+        }
+
+        const normalizedText = text.trim().toLowerCase();
+        if (normalizedText === 'cancel') {
+          this.pendingOrders.delete(senderPhone);
+          return [
+            {
+              to: senderPhone,
+              type: 'text',
+              preview_url: false,
+              message: 'Order cancelled. You can start a new order anytime.',
+            },
+            this.onboardingFlow.getMainMenu(senderPhone),
+          ];
+        }
+
         this.pendingOrders.delete(senderPhone);
         const orderMessages = await this.orderFlow.handlePlaceOrder(
           senderPhone,
           pendingOrder.userId,
           text,
-        );
-        this.logger.log(
-          `[ORDER FLOW] Order placement returned ${orderMessages.length} messages`,
         );
         return orderMessages;
       }
@@ -101,7 +138,24 @@ export class ChatbotService {
       return menuSelection;
     }
 
-    return this.onboardingFlow.getMainMenu(senderPhone);
+    try {
+      return this.handleUnexpectedInput(text, senderPhone);
+    } catch (error) {
+      this.logger.error(
+        `[FALLBACK ERROR] Failed to handle unexpected input: ${error instanceof Error ? error.message : String(error)}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+      return [
+        {
+          to: senderPhone,
+          type: 'text',
+          preview_url: false,
+          message:
+            "I'm having trouble understanding that. Please select from the menu:",
+        },
+        this.onboardingFlow.getMainMenu(senderPhone),
+      ];
+    }
   }
 
   private handleMenuSelection(
@@ -140,6 +194,28 @@ export class ChatbotService {
     }
   }
 
+
+  private handleUnexpectedInput(
+    text: string,
+    senderPhone: string,
+  ): SendMessageDto | SendMessageDto[] {
+    // Log unexpected input for monitoring (truncate if too long)
+    const logText = text.length > 100 ? `${text.substring(0, 100)}...` : text;
+    this.logger.warn(
+      `[UNEXPECTED INPUT] Received unexpected text from ${senderPhone}: "${logText}"`,
+    );
+
+    return [
+      {
+        to: senderPhone,
+        type: 'text',
+        preview_url: false,
+        message: "I didn't understand that. Please select from the menu below:",
+      },
+      this.onboardingFlow.getMainMenu(senderPhone),
+    ];
+  }
+
   private async handleInteractiveMessage(
     message: WhatsappMessage,
     senderPhone: string,
@@ -164,27 +240,17 @@ export class ChatbotService {
     senderPhone: string,
     message?: WhatsappMessage,
   ): Promise<SendMessageDto | SendMessageDto[] | null> {
-    this.logger.log(
-      `[BUTTON HANDLER] Button clicked: buttonId="${buttonId}", senderPhone=${senderPhone}`,
-    );
     if (!buttonId) {
-      this.logger.warn(`[BUTTON HANDLER] No buttonId provided`);
       return null;
     }
 
     const user = await this.usersService.findByPhoneNumber(senderPhone);
     if (!user) {
-      this.logger.log(
-        `[BUTTON HANDLER] User not found for ${senderPhone}, sending onboarding flow`,
-      );
       await this.onboardingFlow.sendOnboardingFlow(senderPhone);
       return null;
     }
 
     const userId = user.id;
-    this.logger.log(
-      `[BUTTON HANDLER] User found: userId=${userId}, processing button: ${buttonId}`,
-    );
 
     if (message?.context?.referred_product?.product_retailer_id) {
       const productRetailerId =
@@ -211,20 +277,11 @@ export class ChatbotService {
         productRetailerId,
       );
     } else if (buttonId === 'place_order') {
-      this.logger.log(
-        `[ORDER FLOW] Place order button clicked by ${senderPhone}`,
-      );
       const user = await this.usersService.findByPhoneNumber(senderPhone);
       const userAddress = user?.address || null;
 
-      this.logger.log(
-        `[ORDER FLOW] User lookup result: userId=${userId}, hasAddress=${!!userAddress}, address="${userAddress || 'none'}"`,
-      );
-
       if (userAddress) {
-        this.logger.log(
-          `[ORDER FLOW] User has saved address, requesting confirmation`,
-        );
+
         this.pendingOrders.set(senderPhone, {
           userId,
           state: 'address_confirmation',
@@ -234,45 +291,28 @@ export class ChatbotService {
           userId,
           userAddress,
         );
-        this.logger.log(
-          `[ORDER FLOW] Address confirmation message returned: ${JSON.stringify(addressMessage)}`,
-        );
+
         return addressMessage;
       } else {
-        this.logger.log(
-          `[ORDER FLOW] User has no saved address, requesting address input`,
-        );
         this.pendingOrders.set(senderPhone, {
           userId,
           state: 'address_input',
         });
         const addressRequestMessage =
           await this.orderFlow.requestDeliveryAddress(senderPhone);
-        this.logger.log(
-          `[ORDER FLOW] Address request message returned: ${JSON.stringify(addressRequestMessage)}`,
-        );
         return addressRequestMessage;
       }
     } else if (buttonId === 'use_existing_address') {
-      this.logger.log(
-        `[ORDER FLOW] Use existing address button clicked by ${senderPhone}`,
-      );
       const pendingOrder = this.pendingOrders.get(senderPhone);
       if (pendingOrder && pendingOrder.state === 'address_confirmation') {
         const user = await this.usersService.findByPhoneNumber(senderPhone);
         const userAddress = user?.address;
         if (userAddress) {
-          this.logger.log(
-            `[ORDER FLOW] Using existing address: "${userAddress}", proceeding with order placement`,
-          );
           this.pendingOrders.delete(senderPhone);
           const orderMessages = await this.orderFlow.handlePlaceOrder(
             senderPhone,
             pendingOrder.userId,
             userAddress,
-          );
-          this.logger.log(
-            `[ORDER FLOW] Order placement returned ${orderMessages.length} messages`,
           );
           return orderMessages;
         } else {
@@ -298,15 +338,8 @@ export class ChatbotService {
       return null;
     } else if (buttonId.startsWith('payment_')) {
       const orderId = buttonId.replace('payment_', '');
-      this.logger.log(
-        `[PAYMENT] Pay Now button clicked by ${senderPhone} for orderId=${orderId}`,
-      );
-
       const order = await this.ordersService.findById(orderId);
       if (!order) {
-        this.logger.warn(
-          `[PAYMENT] Order not found for Pay Now click: orderId=${orderId}`,
-        );
         return {
           to: senderPhone,
           type: 'text',
@@ -324,10 +357,6 @@ export class ChatbotService {
           user.email && user.email.length > 0
             ? user.email
             : `${senderPhone}@whatsapp.local`;
-
-        this.logger.log(
-          `[PAYMENT] Generating new payment link: orderId=${orderId}, amount=${amount}, email=${email}`,
-        );
 
         paymentLink = await this.paymentsService.generatePaymentLink(
           order.id,
@@ -388,13 +417,8 @@ export class ChatbotService {
     message: WhatsappMessage,
     senderPhone: string,
   ): Promise<SendMessageDto | SendMessageDto[] | null> {
-    this.logger.log(
-      `[ORDER FLOW] Handling WhatsApp ORDER message from ${senderPhone}`,
-    );
-
     const user = await this.usersService.findByPhoneNumber(senderPhone);
     if (!user) {
-      this.logger.log(`[ORDER FLOW] User not found, sending onboarding flow`);
       await this.onboardingFlow.sendOnboardingFlow(senderPhone);
       return null;
     }
@@ -405,7 +429,6 @@ export class ChatbotService {
       !orderData.product_items ||
       orderData.product_items.length === 0
     ) {
-      this.logger.warn(`[ORDER FLOW] ORDER message missing product items`);
       return {
         to: senderPhone,
         type: 'text',
@@ -414,21 +437,13 @@ export class ChatbotService {
       };
     }
 
-    this.logger.log(
-      `[ORDER FLOW] Processing ${orderData.product_items.length} product items from ORDER message`,
-    );
-
     try {
-
       await this.cartService.clearCart(user.id);
 
       for (const item of orderData.product_items) {
         const productRetailerId = String(item.product_retailer_id);
         const quantity = Number(item.quantity) || 1;
 
-        this.logger.log(
-          `[ORDER FLOW] Adding item to cart: productRetailerId=${productRetailerId}, quantity=${quantity}`,
-        );
 
         await this.cartFlow.handleAddToCart(
           senderPhone,
@@ -440,10 +455,6 @@ export class ChatbotService {
 
       const userAddress = user.address || null;
 
-      this.logger.log(
-        `[ORDER FLOW] User has address: ${!!userAddress}, proceeding with address flow`,
-      );
-
       if (userAddress) {
         this.pendingOrders.set(senderPhone, {
           userId: user.id,
@@ -454,7 +465,6 @@ export class ChatbotService {
           user.id,
           userAddress,
         );
-        this.logger.log(`[ORDER FLOW] Address confirmation message returned`);
         return addressMessage;
       } else {
         this.pendingOrders.set(senderPhone, {
@@ -463,14 +473,9 @@ export class ChatbotService {
         });
         const addressRequestMessage =
           await this.orderFlow.requestDeliveryAddress(senderPhone);
-        this.logger.log(`[ORDER FLOW] Address request message returned`);
         return addressRequestMessage;
       }
     } catch (error) {
-      this.logger.error(
-        `[ORDER FLOW] Failed to process ORDER message: ${error instanceof Error ? error.message : String(error)}`,
-        error instanceof Error ? error.stack : undefined,
-      );
       return {
         to: senderPhone,
         type: 'text',

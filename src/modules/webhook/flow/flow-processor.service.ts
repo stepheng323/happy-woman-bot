@@ -23,11 +23,9 @@ export class FlowProcessorService {
     );
 
     if (this.isHealthCheckRequest(request)) {
-      this.logger.debug('Treating as health check request');
       return this.handleHealthCheck(request);
     }
 
-    this.logger.debug('Routing to screen handler', { screen: request.screen });
     switch (request.screen) {
       case 'BASIC_INFO':
         return this.basicInfoHandler.handle(request);
@@ -57,7 +55,6 @@ export class FlowProcessorService {
   }
 
   private handleHealthCheck(request: DecryptedRequest): FlowResponse {
-    this.logger.log('Handling Flow health check request');
     return {
       version: request.version || '1.0',
       screen: request.screen || '',
@@ -68,7 +65,6 @@ export class FlowProcessorService {
   }
 
   private handleDefaultScreen(request: DecryptedRequest): FlowResponse {
-    this.logger.log(`Handling screen: ${request.screen}`);
 
     return {
       version: request.version,

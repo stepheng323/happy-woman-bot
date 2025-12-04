@@ -19,21 +19,10 @@ export class AdditionalInfoHandler {
       | string
       | undefined;
 
-    this.logger.log('Handling ADDITIONAL_INFO screen', {
-      data: request.data,
-      screen: request.screen,
-      action: action,
-      allRequestKeys: Object.keys(request),
-    });
-
     const data = request.data || {};
     const isInitialLoad = !action && (!data || Object.keys(data).length === 0);
 
     if (isInitialLoad) {
-      this.logger.debug(
-        'Initial ADDITIONAL_INFO screen load - returning screen with data from BASIC_INFO',
-      );
-
       return {
         version: request.version,
         screen: request.screen,
@@ -42,9 +31,6 @@ export class AdditionalInfoHandler {
     }
 
     if (action !== 'data_exchange') {
-      this.logger.debug(
-        'Action is not data_exchange, returning current screen',
-      );
       return {
         version: request.version,
         screen: request.screen,
@@ -129,16 +115,6 @@ export class AdditionalInfoHandler {
       };
     }
 
-    this.logger.log('All data validated, creating user', {
-      phoneNumber,
-      businessName,
-      contactPerson,
-      email,
-      businessAddress,
-      natureOfBusiness,
-      registrationNumber,
-    });
-
     try {
       await this.usersService.createUser({
         phoneNumber,
@@ -149,8 +125,6 @@ export class AdditionalInfoHandler {
         natureOfBusiness,
         registrationNumber,
       });
-
-      this.logger.log(`User created successfully: ${phoneNumber}`);
 
       const version =
         typeof request.version === 'string'
@@ -168,7 +142,14 @@ export class AdditionalInfoHandler {
       return {
         version: version,
         screen: 'SUCCESS',
-        data: {},
+        data: {
+          extension_message_response: {
+            params: {
+              flow_token: request.flow_token,
+              status: 'COMPLETE',
+            },
+          },
+        },
       };
     } catch (error) {
       this.logger.error(

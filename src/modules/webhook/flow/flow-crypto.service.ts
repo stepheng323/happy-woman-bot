@@ -18,6 +18,9 @@ export class FlowCryptoService {
   constructor(private readonly configService: ConfigService<Env>) {}
 
   private getPrivateKey(): crypto.KeyObject {
+    // Priority order: BASE64 > PEM > PATH > default file
+    // This order prioritizes env vars (Render-friendly) over file paths
+    
     const base64 =
       this.configService.get('META_FLOW_PRIVATE_KEY_BASE64', { infer: true }) ||
       '';
@@ -29,8 +32,26 @@ export class FlowCryptoService {
       .replace(/^["']|["']$/g, '');
     let pem = (
       this.configService.get('META_FLOW_PRIVATE_KEY_PEM', { infer: true }) || ''
-    ).replace(/\\\\n/g, '\\n');
+    )
+      .trim()
+      .replace(/\\\\n/g, '\n') // Handle escaped newlines
+      .replace(/\\n/g, '\n'); // Handle literal \n sequences
 
+    // 1. Try BASE64 first (best for Render/env vars)
+    if (!pem && base64) {
+      try {
+        pem = Buffer.from(base64.trim(), 'base64').toString('utf8');
+      } catch (error) {
+        this.logger.warn(
+          `Failed to decode META_FLOW_PRIVATE_KEY_BASE64: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+    }
+
+    // 2. Try PEM string directly (works if properly formatted in env var)
+    // PEM is already set above if META_FLOW_PRIVATE_KEY_PEM exists
+
+    // 3. Try reading from file path (for local development)
     if (!pem && keyPath) {
       try {
         pem = fs.readFileSync(keyPath, 'utf8');
@@ -41,22 +62,19 @@ export class FlowCryptoService {
       }
     }
 
-    if (!pem && base64) {
-      pem = Buffer.from(base64, 'base64').toString('utf8');
-    }
-
+    // 4. Try default file location (fallback for local dev)
     if (!pem) {
       const defaultPath = `${process.cwd()}/whatsapp_flow_private_key.pem`;
       try {
         pem = fs.readFileSync(defaultPath, 'utf8');
       } catch {
-
+        // Silently fail, will throw error below if still no pem
       }
     }
 
     if (!pem) {
       throw new Error(
-        'Set one of META_FLOW_PRIVATE_KEY_PATH, META_FLOW_PRIVATE_KEY_PEM, META_FLOW_PRIVATE_KEY_BASE64, or provide a default private key file at whatsapp_flow_private_key.pem',
+        'Private key not found. Set one of: META_FLOW_PRIVATE_KEY_BASE64 (recommended for Render), META_FLOW_PRIVATE_KEY_PEM, META_FLOW_PRIVATE_KEY_PATH, or provide a default private key file at whatsapp_flow_private_key.pem',
       );
     }
 

@@ -29,7 +29,46 @@ export class BasicInfoHandler {
     const isInitialLoad = !action && (!data || Object.keys(data).length === 0);
 
     if (isInitialLoad) {
-      this.logger.debug('Initial screen load - returning empty screen');
+      this.logger.debug(
+        'Initial screen load - checking if user already exists',
+      );
+
+      try {
+        const phoneNumber = this.flowTokenService.extractPhoneNumberFromToken(
+          request.flow_token,
+        );
+
+        if (phoneNumber) {
+          const userExists =
+            await this.usersService.checkUserExists(phoneNumber);
+          if (userExists) {
+            this.logger.log(
+              `User ${phoneNumber} already exists, redirecting to SUCCESS screen`,
+            );
+            return {
+              version: request.version,
+              screen: 'SUCCESS',
+              data: {
+                extension_message_response: {
+                  params: {
+                    flow_token: request.flow_token,
+                    status: 'COMPLETE',
+                  },
+                },
+              },
+            };
+          }
+        }
+      } catch (error) {
+        this.logger.warn(
+          `Failed to check user existence during initial load: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        // Continue with normal flow if check fails
+      }
+
+      this.logger.debug(
+        'User not found or check failed - returning empty screen',
+      );
       return {
         version: request.version,
         screen: request.screen,

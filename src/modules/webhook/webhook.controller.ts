@@ -10,7 +10,6 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
-import { WhatsappWebhookDto } from './dto/whatsapp-webhook.dto';
 import { WhatsappService } from '../whatsapp/whatsapp.service';
 
 @ApiTags('webhook')

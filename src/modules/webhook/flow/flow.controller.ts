@@ -53,31 +53,8 @@ export class FlowController {
       const { aesKey, iv, payload } =
         this.flowCryptoService.decryptFlowsRequest(envelope);
 
-      this.logger.debug('Flow request decrypted', {
-        screen: payload.screen,
-        version: payload.version,
-        data: payload.data,
-        dataType: typeof payload.data,
-        dataKeys: payload.data ? Object.keys(payload.data) : [],
-        dataStringified: JSON.stringify(payload.data),
-        flow_token: payload.flow_token,
-        action: (payload as any).action,
-        allPayloadKeys: Object.keys(payload),
-        fullPayload: JSON.stringify(payload, null, 2),
-
-        hasBusinessName: !!(payload as any).business_name,
-        hasContactPerson: !!(payload as any).contact_person,
-        hasEmail: !!(payload as any).email,
-      });
-
       const response =
         await this.flowProcessorService.processFlowRequest(payload);
-
-      this.logger.debug('Flow response prepared', {
-        screen: response.screen,
-        version: response.version,
-        hasData: !!response.data,
-      });
 
       const encryptedResponse = this.flowCryptoService.encryptFlowsResponse({
         aesKey,
@@ -85,10 +62,6 @@ export class FlowController {
         response,
       });
 
-      this.logger.log('Flow response encrypted and sent', {
-        responseScreen: response.screen,
-        requestScreen: payload.screen,
-      });
       res.send(encryptedResponse);
     } catch (error) {
       if (error instanceof FlowEndpointException) {
